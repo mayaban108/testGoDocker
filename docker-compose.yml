@@ -6,3 +6,5 @@ services:
       - db
   db:
     image: postgres
+    volumes: 
+      - ./sql:/docker-entrypoint-initdb.d/
