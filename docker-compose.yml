@@ -4,7 +4,15 @@ services:
     build: .
     depends_on:
       - db
+    networks: 
+      - linkup
   db:
     image: postgres
     volumes: 
       - ./sql:/docker-entrypoint-initdb.d/
+    networks: 
+      - linkup
+  
+networks: 
+    linkup:
+        driver: bridge
