@@ -1,9 +1,9 @@
 package main
 
+//https://www.youtube.com/watch?v=SonwZ6MF5BE&t=6s
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -11,74 +11,52 @@ import (
 )
 
 type Article struct {
-	ID      string `json:"Id"`
-	Title   string `json:"Title"`
+	ID      string `json:"id"`
+	Title   string `json:"title"`
 	Desc    string `json:"desc"`
 	Content string `json:"content"`
 }
 
 var Articles []Article
 
-func returnAllArticles(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: returnAllArticles")
+func getArticles(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	json.NewEncoder(w).Encode(Articles)
 }
+func getArticle(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	i := mux.Vars(r)
 
-func returnSingleArticle(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	key := vars["id"]
-	for _, article := range Articles {
-		if article.ID == key {
-			json.NewEncoder(w).Encode(article)
+	// for undefine, item to the range of Article
+	for _, item := range Articles {
+		if item.ID == i["id"] {
+			json.NewEncoder(w).Encode(item)
+			return
 		}
 	}
+	json.NewEncoder(w).Encode(&Article{})
 }
+
 func createNewArticle(w http.ResponseWriter, r *http.Request) {
-	reqBody, _ := ioutil.ReadAll(r.Body)
-	var article Article
-	json.Unmarshal(reqBody, &article)
-	Articles = append(Articles, article)
-	json.NewEncoder(w).Encode(article)
+
 }
 
-func formHandler(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		fmt.Fprintf(w, "ParseForm() err: %v", err)
-		return
-	}
-	fmt.Fprintf(w, "POST request successful \n")
-	name := r.FormValue("name")
-	address := r.FormValue("address")
-	fmt.Fprintf(w, "Name = %s\n", name)
-	fmt.Fprintf(w, "Address = %s\n", address)
+func updateArticle(w http.ResponseWriter, r *http.Request) {
 }
-func homepage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Welcome to the HomePage!")
-	fmt.Println("Endpoint Hit: homePage")
-}
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/hello" {
-		http.Error(w, "404 not found.", http.StatusNotFound)
-		return
-	}
 
-	if r.Method != "GET" {
-		http.Error(w, "Method is not supported.", http.StatusNotFound)
-		return
-	}
+func deleteArticle(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Fprintf(w, "Hello!")
 }
 
 func handlers() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
-	myRouter.HandleFunc("/home", homepage)
-	myRouter.HandleFunc("/hello", helloHandler)
-	myRouter.HandleFunc("/form", formHandler)
-	myRouter.HandleFunc("/articles", returnAllArticles)
-	//myRouter.HandleFunc("/article", createNewArticle).Methods("POST")
-	myRouter.HandleFunc("/articles/{id}", returnSingleArticle)
+	myRouter.HandleFunc("/articles", getArticles).Methods("GET")
+	myRouter.HandleFunc("/article/{id}", getArticle).Methods("GET")
+	myRouter.HandleFunc("/article", createNewArticle).Methods("POST")
+	myRouter.HandleFunc("/articles/{id}", updateArticle).Methods("Put")
+	myRouter.HandleFunc("/articles/{id}", deleteArticle).Methods("DELETE")
 	myRouter.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("static/"))))
 
 	fmt.Printf("Starting server at port 8080\n")
